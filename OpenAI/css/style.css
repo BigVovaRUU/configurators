@@ -1,0 +1,64 @@
+
+    /* Темная тема — улучшенная контрастность, аккуратные поверхности */
+    :root {
+      --ring: #6366f1;            /* indigo-500 */
+      --card-bg: rgba(255,255,255,0.86);
+      --card-border: rgba(0,0,0,0.06);
+      --muted: #475569;           /* slate-600 */
+      --code-bg: #0f172a;         /* slate-900 */
+    }
+    .dark {
+      --ring: #818cf8;            /* indigo-400 */
+      --card-bg: rgba(24,24,27,0.88);   /* zinc-900 with opacity */
+      --card-border: rgba(255,255,255,0.12);
+      --muted: #a3a3a3;           /* neutral-400 */
+      --code-bg: #0b1220;         /* deep navy for code */
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 0.75rem;     /* rounded-xl */
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+      -webkit-backdrop-filter: blur(6px);
+      backdrop-filter: blur(6px);
+    }
+
+    .kbd {
+      display:inline-flex;align-items:center;gap:.25rem;
+      padding:.125rem .375rem; font-size:.75rem; border-radius:.375rem;
+      border:1px solid var(--card-border); color:var(--muted);
+    }
+
+    .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+
+    /* Кнопки (добавим класс .btn к основным кнопкам) */
+    .btn { transition: background-color .15s ease, border-color .15s ease, color .15s ease, transform .02s ease; }
+    .btn:hover { background: rgba(0,0,0,0.03); }
+    .dark .btn:hover { background: rgba(255,255,255,0.06); }
+    .btn:active { transform: translateY(1px); }
+
+    /* Формы: inputs / selects / textareas */
+    .card input, .card select, .card textarea {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      color: inherit;
+      border-radius: .75rem;
+    }
+    .card input:focus, .card select:focus, .card textarea:focus {
+      outline: 2px solid var(--ring);
+      outline-offset: 0;
+    }
+
+    /* Кодовые блоки */
+    pre.code, pre#payload, pre#code {
+      background: var(--code-bg);
+      color: #e2e8f0;            /* slate-200 */
+      border-radius: .75rem;
+      padding: 1rem;
+      overflow:auto;
+      border: 1px solid var(--card-border);
+    }
+
+    /* Таб-кнопки — активное состояние по атрибуту data-tab на контейнере не отслеживается, поэтому оставим hover/стандарт */
+  

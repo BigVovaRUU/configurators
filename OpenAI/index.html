@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="css/style.css">
+  <title>OpenAI API Конфигуратор</title>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-sky-50 to-indigo-50 dark:from-neutral-950 dark:to-neutral-900 text-neutral-900 dark:text-neutral-100">
+  <div class="max-w-7xl mx-auto px-4 py-8">
+    <header class="mb-6 flex items-center justify-between gap-4">
+      <div>
+        <h1 class="text-2xl font-bold">Конфигуратор OpenAI API</h1>
+        <p class="text-sm text-neutral-600 dark:text-neutral-400">HTML + Tailwind + JavaScript. Собирает параметры для <span class="font-semibold">Responses API</span> и генерирует готовый код.</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <button id="darkToggle" class="btn px-3 py-2 rounded-lg border border-black/10 dark:border-white/20 text-sm">Тёмная тема</button>
+        <a href="#docs" class="text-sm underline decoration-dotted">Справка</a>
+        <button id="demoFill" class="btn px-3 py-2 rounded-lg border border-black/10 dark:border-white/20 text-sm">Заполнить пример</button>
+        <a href="#onboarding" class="text-sm underline decoration-dotted">Помощь</a>
+      </div>
+    </header>
+
+    <section id="onboarding" class="mb-6">
+      <div class="card p-4">
+        <div class="flex items-center justify-between">
+          <h2 class="font-semibold">Пошаговая помощь (для новичков)</h2>
+          <button id="toggleHelp" class="btn text-sm px-2 py-1 rounded border border-black/10 dark:border-white/20">Скрыть</button>
+        </div>
+        <ol id="helpBody" class="mt-3 list-decimal ml-5 space-y-2 text-sm text-neutral-700 dark:text-neutral-300">
+          <li><strong>Подключение.</strong> Обычно URL менять <em>не нужно</em>. Если у вас есть ключ OpenAI, храните его на сервере. На время теста можно вставить ключ локально — отметьте чекбокс и введите ключ в поле «API Key».</li>
+          <li><strong>Выбор модели.</strong> Если сомневаетесь — начните с <span class="code">gpt-4.1-mini</span> (быстрый и экономичный). Модели серии <span class="code">o*</span> (например, <span class="code">o4-mini</span>) — для задач рассуждения.</li>
+          <li><strong>Параметры качества.</strong> 
+            <ul class="list-disc ml-5 mt-1">
+              <li><span class="code">temperature</span> — креативность. 0.2 — точнее, 0.7 — разнообразнее.</li>
+              <li><span class="code">max_output_tokens</span> — максимальная длина ответа. Больше — длиннее ответ.</li>
+              <li><span class="code">top_p</span> — альтернативный способ контролировать разнообразие (оставьте 1, если не уверены).</li>
+            </ul>
+          </li>
+          <li><strong>Промпт.</strong> В «system/developer» кратко опишите роль и правила (например: «Ты доброжелательный помощник»). В «user» напишите запрос. Нажмите «+ message», чтобы добавить в список.</li>
+          <li><strong>Скопируйте код.</strong> 
+            Выберите вкладку «JS SDK», «JS fetch» или «Python» и нажмите «Копировать код». Вставьте в свой проект. Ключ не держите на клиенте — используйте серверную прокси-точку.</li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- Панель настроек -->
+    <section class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+      <div class="card p-4 lg:col-span-1">
+        <h2 class="font-semibold mb-3">Подключение</h2>
+        <label class="block text-sm mb-1">API Base URL</label>
+        <input id="baseUrl" class="w-full card px-3 py-2" placeholder="https://api.openai.com/v1" value="https://api.openai.com/v1" />
+        <p class="mt-1 text-xs text-neutral-600 dark:text-neutral-400">Обычно менять не нужно. По умолчанию это официальный адрес OpenAI.</p>
+        <div class="mt-3 flex items-center gap-2">
+          <input id="useEnv" type="checkbox" class="accent-indigo-600" checked>
+          <label for="useEnv" class="text-sm">Использовать <span class="code">process.env.OPENAI_API_KEY</span> / переменные окружения</label>
+        </div>
+        <p class="mt-1 text-xs text-neutral-600 dark:text-neutral-400">Безопаснее хранить ключ на сервере в переменной окружения. На клиент ключ не отправляйте.</p>
+        <div id="keyRow" class="mt-3 hidden">
+          <label class="block text-sm mb-1">API Key (локально, не сохраняется)</label>
+          <input id="apiKey" type="password" class="w-full card px-3 py-2" placeholder="sk-..." autocomplete="off" />
+        </div>
+      </div>
+
+      <div class="card p-4 lg:col-span-1">
+        <h2 class="font-semibold mb-3">Модель и вывод</h2>
+        <label class="block text-sm mb-1">Модель</label>
+        <select id="model" class="w-full card px-3 py-2">
+          <option value="gpt-4.1">gpt-4.1</option>
+          <option value="gpt-4.1-mini" selected>gpt-4.1-mini</option>
+          <option value="o4-mini">o4-mini</option>
+          <option value="o3">o3</option>
+          <option value="o3-mini">o3-mini</option>
+        </select>
+        <p class="mt-1 text-xs text-neutral-600 dark:text-neutral-400">Не знаете, что выбрать? Начните с <span class="code">gpt-4.1-mini</span>.</p>
+
+        <div class="grid grid-cols-2 gap-3 mt-3">
+          <div>
+            <label class="block text-sm mb-1">temperature</label>
+            <input id="temperature" type="number" step="0.1" min="0" max="2" value="0.7" class="w-full card px-3 py-2" />
+            <p class="mt-1 text-xs text-neutral-600 dark:text-neutral-400">0.2 — строже, 0.7 — креативнее. Оставьте 0.7 по умолчанию.</p>
+          </div>
+          <div>
+            <label class="block text-sm mb-1">max_output_tokens</label>
+            <input id="maxTokens" type="number" step="1" min="1" value="1024" class="w-full card px-3 py-2" />
+            <p class="mt-1 text-xs text-neutral-600 dark:text-neutral-400">Максимальная длина ответа. Если текста не хватает — увеличьте значение.</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3 mt-3">
+          <div>
+            <label class="block text-sm mb-1">top_p</label>
+            <input id="topP" type="number" step="0.05" min="0" max="1" value="1" class="w-full card px-3 py-2" />
+            <p class="mt-1 text-xs text-neutral-600 dark:text-neutral-400">Альтернатива temperature. Для новичков — оставьте 1.</p>
+          </div>
+          <div>
+            <label class="block text-sm mb-1">seed (опц.)</label>
+            <input id="seed" type="number" step="1" min="0" placeholder="например 123" class="w-full card px-3 py-2" />
+            <p class="mt-1 text-xs text-neutral-600 dark:text-neutral-400">Необязательно. Установите число, чтобы ответы были более повторяемыми.</p>
+          </div>
+        </div>
+
+        <div class="mt-3 flex items-center gap-2">
+          <input id="stream" type="checkbox" class="accent-indigo-600">
+          <label for="stream" class="text-sm">Streaming</label>
+        </div>
+      </div>
+
+      <div class="card p-4 lg:col-span-1">
+        <h2 class="font-semibold mb-3">Промпт</h2>
+        <label class="block text-sm mb-1">system / developer</label>
+        <textarea id="system" rows="3" class="w-full card px-3 py-2" placeholder="Например: Ты дружелюбный помощник. Отвечай кратко, структурировано, на русском."></textarea>
+        <label class="block text-sm mt-3 mb-1">user</label>
+        <textarea id="user" rows="3" class="w-full card px-3 py-2" placeholder="Например: Объясни простыми словами, как работает API и сгенерируй пример запроса."></textarea>
+        <div class="mt-3 flex gap-2">
+          <button id="addMsg" class="btn px-3 py-2 rounded-lg border border-black/10 dark:border-white/20 text-sm">+ message</button>
+          <button id="clearMsg" class="btn px-3 py-2 rounded-lg border border-black/10 dark:border-white/20 text-sm">Очистить</button>
+        </div>
+        <div class="mt-3 text-xs text-neutral-700 dark:text-neutral-300">
+          <div class="card p-3">
+            <div class="font-semibold mb-1">Подсказки по промптам</div>
+            <ul class="list-disc ml-5 space-y-1">
+              <li>Опишите роль ассистента (кто он и как говорит).</li>
+              <li>Добавьте требования к формату (список, JSON, шаги).</li>
+              <li>Дайте пример входных данных, если это задача преобразования.</li>
+            </ul>
+            <button id="insertPromptExample" class="btn mt-2 px-2 py-1 rounded border border-black/10 dark:border-white/20">Вставить пример</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Экономия токенов -->
+      <div class="card p-4 lg:col-span-1">
+        <h2 class="font-semibold mb-3">Экономия токенов</h2>
+        <div class="flex flex-wrap gap-2 mb-2">
+          <button id="presetEco" class="btn px-3 py-1.5 rounded-lg border border-black/10 dark:border-white/20 text-sm">Пресет: Эконом</button>
+          <button id="presetBalance" class="btn px-3 py-1.5 rounded-lg border border-black/10 dark:border-white/20 text-sm">Пресет: Баланс</button>
+          <button id="presetQuality" class="btn px-3 py-1.5 rounded-lg border border-black/10 dark:border-white/20 text-sm">Пресет: Качество</button>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <input id="svConcise" type="checkbox" class="accent-indigo-600" checked>
+          <label for="svConcise" class="text-sm">Краткий стиль ответа</label>
+        </div>
+        <p class="mt-1 text-xs text-neutral-600 dark:text-neutral-400">Добавляет правило в system/developer: отвечать максимально кратко, по делу, без воды.</p>
+
+        <div class="mt-3 flex items-center gap-2">
+          <input id="svSkipAssistant" type="checkbox" class="accent-indigo-600" checked>
+          <label for="svSkipAssistant" class="text-sm">Не отправлять предыдущие ответы ассистента</label>
+        </div>
+        <p class="mt-1 text-xs text-neutral-600 dark:text-neutral-400">Чаще всего достаточно контекста пользователя. Это сокращает историю переписки.</p>
+
+        <div class="mt-3">
+          <label class="block text-sm mb-1" for="svHistory">Глубина истории (сообщений)</label>
+          <input id="svHistory" type="number" min="1" step="1" value="4" class="w-full card px-3 py-2" />
+          <p class="mt-1 text-xs text-neutral-600 dark:text-neutral-400">Сколько последних сообщений отправлять в контекст (после фильтрации).</p>
+        </div>
+
+        <div class="mt-3">
+          <label class="block text-sm mb-1" for="svTrunc">Обрезать каждое сообщение до (символов)</label>
+          <input id="svTrunc" type="number" min="0" step="50" value="0" class="w-full card px-3 py-2" />
+          <p class="mt-1 text-xs text-neutral-600 dark:text-neutral-400">0 — не обрезать. Полезно, если пользователь присылает очень длинные тексты.</p>
+        </div>
+
+        <div class="mt-3 flex items-center gap-2">
+          <input id="svStripMd" type="checkbox" class="accent-indigo-600">
+          <label for="svStripMd" class="text-sm">Убирать Markdown/форматирование</label>
+        </div>
+        <p class="mt-1 text-xs text-neutral-600 dark:text-neutral-400">Удаляет заголовки, списки, ссылки — текст становится компактнее (может теряться часть оформления).</p>
+
+        <div class="mt-3">
+          <label class="block text-sm mb-1" for="svCap">Ограничить max_output_tokens (жёсткий лимит)</label>
+          <input id="svCap" type="number" min="64" step="64" value="512" class="w-full card px-3 py-2" />
+          <p class="mt-1 text-xs text-neutral-600 dark:text-neutral-400">Этот лимит перекроет значение из блока «Модель и вывод» (будет взято минимальное из двух).</p>
+        </div>
+
+        <div class="mt-3 flex items-center gap-2">
+          <input id="svPreferMini" type="checkbox" class="accent-indigo-600" checked>
+          <label for="svPreferMini" class="text-sm">Авто-переключение на «mini»-модель</label>
+        </div>
+        <p class="mt-1 text-xs text-neutral-600 dark:text-neutral-400">Если выбрана «старшая» модель и есть версия «-mini», будет использована она (дешевле/быстрее для большинства задач).</p>
+      </div>
+
+      <!-- Формат и контроль -->
+      <div class="card p-4 lg:col-span-1">
+        <h2 class="font-semibold mb-3">Формат и контроль</h2>
+
+        <label class="block text-sm mb-1" for="stopSeq">Stop-последовательности</label>
+        <textarea id="stopSeq" rows="2" class="w-full card px-3 py-2" placeholder="Например: ###END, \n\nUser:"></textarea>
+        <p class="mt-1 text-xs text-neutral-600 dark:text-neutral-400">Если модель встретит любую из этих строк, она прекратит ответ. Указывайте через запятую или с новой строки.</p>
+
+        <div class="mt-3">
+          <label class="block text-sm mb-1">Формат вывода</label>
+          <select id="respFormat" class="w-full card px-3 py-2">
+            <option value="none" selected>Обычный текст</option>
+            <option value="json_schema">Строгий JSON по схеме</option>
+          </select>
+          <p class="mt-1 text-xs text-neutral-600 dark:text-neutral-400">«Строгий JSON» заставляет модель вернуть валидный JSON по вашей схеме.</p>
+        </div>
+
+        <div id="schemaWrap" class="mt-3 hidden">
+          <label class="block text-sm mb-1" for="jsonSchema">JSON Schema</label>
+          <textarea id="jsonSchema" rows="6" class="w-full card px-3 py-2" placeholder='{"type":"object","properties":{"answer":{"type":"string"}},"required":["answer"]}'></textarea>
+          <p class="mt-1 text-xs text-neutral-600 dark:text-neutral-400">Схема в формате JSON Schema (draft-07+). Модель вернёт объект, который ей соответствует.</p>
+        </div>
+      </div>
+
+      <!-- Надёжность -->
+      <div class="card p-4 lg:col-span-1">
+        <h2 class="font-semibold mb-3">Надёжность</h2>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm mb-1" for="timeoutMs">Таймаут запроса (мс)</label>
+            <input id="timeoutMs" type="number" min="0" step="100" value="20000" class="w-full card px-3 py-2" />
+            <p class="mt-1 text-xs text-neutral-600 dark:text-neutral-400">0 — без таймаута. Иначе запрос будет прерываться по времени.</p>
+          </div>
+          <div>
+            <label class="block text-sm mb-1" for="retries">Повторы (шт.)</label>
+            <input id="retries" type="number" min="0" step="1" value="1" class="w-full card px-3 py-2" />
+            <p class="mt-1 text-xs text-neutral-600 dark:text-neutral-400">Сколько раз пробовать заново при сетевых ошибках/429.</p>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3 mt-3">
+          <div>
+            <label class="block text-sm mb-1" for="backoffMs">Пауза между повторами (мс)</label>
+            <input id="backoffMs" type="number" min="0" step="100" value="1500" class="w-full card px-3 py-2" />
+          </div>
+          <div>
+            <label class="block text-sm mb-1" for="onLength">Если ответ обрезан (length)</label>
+            <select id="onLength" class="w-full card px-3 py-2">
+              <option value="none" selected>Ничего не делать</option>
+              <option value="retry_more">Повторить с большим лимитом</option>
+            </select>
+            <p class="mt-1 text-xs text-neutral-600 dark:text-neutral-400">Если модель завершила ответ по лимиту токенов.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Профили и переменные -->
+      <div class="card p-4 lg:col-span-1">
+        <h2 class="font-semibold mb-3">Профили и переменные</h2>
+
+        <!-- Профили -->
+        <div class="mb-4">
+          <div class="flex items-end gap-2">
+            <div class="flex-1">
+              <label class="block text-sm mb-1" for="profileName">Название профиля</label>
+              <input id="profileName" class="w-full card px-3 py-2" placeholder="Например: Мой проект" />
+            </div>
+            <button id="saveProfile" class="btn px-3 py-2 rounded-lg border border-black/10 dark:border-white/20 text-sm">Сохранить</button>
+          </div>
+          <div class="mt-3 flex items-end gap-2">
+            <div class="flex-1">
+              <label class="block text-sm mb-1" for="loadProfile">Загрузить профиль</label>
+              <select id="loadProfile" class="w-full card px-3 py-2"></select>
+            </div>
+            <button id="deleteProfile" class="btn px-3 py-2 rounded-lg border border-black/10 dark:border-white/20 text-sm">Удалить</button>
+            <button id="exportProfile" class="btn px-3 py-2 rounded-lg border border-black/10 dark:border-white/20 text-sm">Экспорт</button>
+          </div>
+          <div class="mt-3">
+            <label class="block text-sm mb-1" for="importProfile">Импорт профиля (вставьте JSON)</label>
+            <textarea id="importProfile" rows="3" class="w-full card px-3 py-2" placeholder='{"name":"Мой профиль", ...}'></textarea>
+            <button id="applyImport" class="btn mt-2 px-3 py-2 rounded-lg border border-black/10 dark:border-white/20 text-sm">Импортировать</button>
+            <p class="mt-1 text-xs text-neutral-600 dark:text-neutral-400">Профиль сохраняет все настройки и промпты. Данные хранятся только у вас в браузере (LocalStorage).</p>
+          </div>
+        </div>
+
+        <!-- Переменные в промпте -->
+        <div>
+          <div class="flex items-center justify-between">
+            <div class="font-semibold">Переменные в промпте</div>
+            <button id="varsScan" class="btn px-2 py-1 rounded border border-black/10 dark:border-white/20 text-sm">Найти переменные</button>
+          </div>
+          <p class="mt-1 text-xs text-neutral-600 dark:text-neutral-400">Используйте плейсхолдеры вида <span class="code">{{name}}</span> в полях system/user. Ниже появятся поля для значений.</p>
+          <div id="varsList" class="mt-2 space-y-2"></div>
+          <button id="varsApply" class="btn mt-2 px-3 py-2 rounded-lg border border-black/10 dark:border-white/20 text-sm">Применить значения</button>
+        </div>
+      </div>
+
+      <!-- Тарифы моделей (заполняет оценку стоимости) -->
+      <div class="card p-4 lg:col-span-1">
+        <h2 class="font-semibold mb-3">Тарифы моделей (черновик)</h2>
+        <p class="text-xs text-neutral-600 dark:text-neutral-400">Укажите цены за 1K токенов. Кнопка ниже подставит их в блок «Оценка стоимости».</p>
+        <div class="mt-3 overflow-auto">
+          <table class="w-full text-sm">
+            <thead class="text-left text-neutral-600 dark:text-neutral-400">
+              <tr><th class="py-1 pr-2">Модель</th><th class="py-1 pr-2">Вход ($/1K)</th><th class="py-1 pr-2">Выход ($/1K)</th></tr>
+            </thead>
+            <tbody id="pricingTable"></tbody>
+          </table>
+        </div>
+        <div class="mt-3 flex items-center gap-2">
+          <input id="autoPriceOnModel" type="checkbox" class="accent-indigo-600" checked>
+          <label for="autoPriceOnModel" class="text-sm">Подставлять цены выбранной модели автоматически</label>
+        </div>
+        <button id="applyModelPrice" class="btn mt-2 px-3 py-2 rounded-lg border border-black/10 dark:border-white/20 text-sm">Подставить цены текущей модели</button>
+      </div>
+    </section>
+
+    <!-- Предпросмотр JSON и код -->
+    <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div class="card p-4">
+        <div class="flex items-center justify-between">
+          <h2 class="font-semibold">Payload для Responses API</h2>
+          <button id="copyJson" class="btn px-3 py-2 rounded-lg border border-black/10 dark:border-white/20 text-sm">Копировать JSON</button>
+        </div>
+        <pre id="payload" class="code text-sm mt-3 whitespace-pre-wrap"></pre>
+        <p class="mt-2 text-xs text-neutral-600 dark:text-neutral-400">Это ровно то, что отправится в OpenAI. Если включить <span class="code">stream</span>, ответ придёт частями.</p>
+      </div>
+
+      <div class="card p-4">
+        <div class="flex items-center gap-2 mb-3">
+          <button data-tab="js-sdk" class="btn tab px-3 py-2 rounded-lg border border-black/10 dark:border-white/20 text-sm">JS SDK</button>
+          <button data-tab="js-fetch" class="btn tab px-3 py-2 rounded-lg border border-black/10 dark:border-white/20 text-sm">JS fetch</button>
+          <button data-tab="py" class="btn tab px-3 py-2 rounded-lg border border-black/10 dark:border-white/20 text-sm">Python</button>
+          <button id="copyCode" class="btn ml-auto px-3 py-2 rounded-lg border border-black/10 dark:border-white/20 text-sm">Копировать код</button>
+        </div>
+        <pre id="code" class="code text-sm whitespace-pre-wrap"></pre>
+        <p class="mt-2 text-xs text-neutral-600 dark:text-neutral-400">Скопируйте и вставьте код в ваш проект. Для продакшена держите ключ на сервере и делайте запросы через бекенд.</p>
+      </div>
+    </section>
+
+    <section class="mt-6">
+      <div class="card p-4">
+        <h2 class="font-semibold">Проверка JSON по схеме</h2>
+        <p class="mt-1 text-xs text-neutral-600 dark:text-neutral-400">Если включён режим «Строгий JSON по схеме», можно проверить пример ответа ниже.</p>
+        <textarea id="jsonToValidate" rows="6" class="w-full card px-3 py-2" placeholder='{"answer":"Привет"}'></textarea>
+        <div class="mt-2 flex items-center gap-2">
+          <button id="validateJson" class="btn px-3 py-2 rounded-lg border border-black/10 dark:border-white/20 text-sm">Проверить</button>
+          <div id="jsonValidResult" class="text-sm"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="mt-6">
+      <div class="card p-4">
+        <h2 class="font-semibold">Оценка токенов и стоимости (черновая)</h2>
+        <p class="mt-1 text-xs text-neutral-600 dark:text-neutral-400">Грубая оценка: считаем ~4 символа ≈ 1 токен. Реальный подсчёт зависит от конкретной модели.</p>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3">
+          <div>
+            <label class="block text-sm mb-1" for="priceIn">Цена входа за 1K токенов ($)</label>
+            <input id="priceIn" type="number" step="0.0001" min="0" value="0" class="w-full card px-3 py-2" />
+          </div>
+          <div>
+            <label class="block text-sm mb-1" for="priceOut">Цена выхода за 1K токенов ($)</label>
+            <input id="priceOut" type="number" step="0.0001" min="0" value="0" class="w-full card px-3 py-2" />
+          </div>
+          <div>
+            <label class="block text-sm mb-1" for="estOutput">Оценочный объём выхода (токены)</label>
+            <input id="estOutput" type="number" step="1" min="0" value="0" class="w-full card px-3 py-2" />
+            <p class="mt-1 text-xs text-neutral-600 dark:text-neutral-400">Если оставить 0 — возьмём из max_output_tokens.</p>
+          </div>
+        </div>
+        <div class="mt-3 text-sm">
+          <div id="estTokens" class="mt-1"></div>
+          <div id="estCost" class="mt-1 font-medium"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Сноски и справка -->
+    <section id="docs" class="mt-10 text-sm leading-relaxed text-neutral-700 dark:text-neutral-300">
+      <div class="card p-4">
+        <h3 class="font-semibold mb-2">Примечания</h3>
+        <ul class="list-disc ml-5 space-y-1">
+          <li>Используется <strong>Responses API</strong> (<span class="code">POST /v1/responses</span>), рекомендованный к использованию вместо Chat Completions.</li>
+          <li><span class="code">max_output_tokens</span> ограничивает максимальный размер вывода модели; при нехватке токенов ответ может завершиться статусом <em>incomplete</em>.</li>
+          <li>Для reasoning-моделей серии <span class="code">o*</span> применяются те же параметры Responses API. Учтите, что ряд возможностей (например, подробный streaming) может иметь ограничения.</li>
+          <li>Код ниже не отправляет ключ на клиент; в продакшене проксируйте запросы через сервер.</li>
+        </ul>
+      </div>
+    </section>
+  </div>
+
+  <script src="js/main.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class'
+    }
+  </script>
+</body>
+</html>
